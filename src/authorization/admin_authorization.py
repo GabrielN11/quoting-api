@@ -12,7 +12,7 @@ def adminAuthorization(f):
     def decorated(*args, **kwargs):
         authorization = request.headers.get('Authorization')
         if not authorization:
-            return 'Forbidden.', 403
+            return 'Forbidden.', 401
 
         token = authorization.split()[1]
         try:
