@@ -44,7 +44,17 @@ class PublicationRoute(Resource):
             db.session.add(seen)
             db.session.commit()
 
-            return publication.text, 200
+            response = {
+                "id": publication.id,
+                "author": publication.author,
+                "text": publication.text,
+                "user_id": publication.userId,
+                "date": str(publication.date),
+                "commentaries_count": publication.commentary.count(),
+                "share_count": publication.share.count()
+            }
+
+            return {"message": "Publication retrieved.", "data": response}, 200
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
