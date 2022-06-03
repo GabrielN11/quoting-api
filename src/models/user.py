@@ -14,6 +14,6 @@ class User(db.Model):
      admin = db.Column(db.BOOLEAN, default=False)
      
      publication = db.relationship('Publication', cascade="all, delete")
-     seen = db.relationship('Seen', cascade="all, delete")
+     seen = db.relationship('Seen', cascade="all, delete", lazy='dynamic')
      commentary = db.relationship('Commentary', cascade="all, delete")
      share = db.relationship('Share', cascade="all, delete")

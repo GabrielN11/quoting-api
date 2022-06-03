@@ -1,4 +1,3 @@
-import bcrypt
 from flask_restx import Resource
 from datetime import datetime, timedelta
 
@@ -40,11 +39,7 @@ class ProfileRoute(Resource):
             return {"message": "Profile found.", "data": response}
         except Exception as err:
             print(str(err))
-            return {"error": "Error connecting to database. Try again later."}, 500
-        
-
-        return 200
-        
+            return {"error": "Error connecting to database. Try again later."}, 500        
 
 @api.route('/alter-password/<id>')
 class AlterPasswordRoute(Resource):
