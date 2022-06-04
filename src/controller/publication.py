@@ -16,10 +16,12 @@ from src.models.seen import Seen
 from src.models.follow import Follow
 
 from src.authorization.user_authorization import userAuthorization
+from src.authorization.admin_authorization import adminAuthorization
 from env import JWT_KEY
 
 
 @api.route('/publication')
+@api.route('/publication/<id>')
 class PublicationRoute(Resource):
 
     @userAuthorization
@@ -85,6 +87,46 @@ class PublicationRoute(Resource):
             db.session.commit()
 
             return {"message": "Posted.", "data": {"id": publication.id}}, 201
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+    @userAuthorization
+    def put(self, id):
+        data = api.payload
+        text = None
+        try:
+            text = data['text']
+        except:
+            return {"error": "Missing data."}, 400
+
+        try:
+            publication = Publication.query.filter_by(id=id).first()
+            publication.text = text
+            db.session.add(publication)
+            db.session.commit()
+            response = {
+                "id": publication.id,
+                "author": publication.author,
+                "text": publication.text,
+                "user_id": publication.userId,
+                "date": str(publication.date),
+                "commentaries_count": publication.commentary.count(),
+                "share_count": publication.share.count(),
+            }
+            return {"message": "Publication updated.", "data": response}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+    @userAuthorization
+    def delete(self, id):
+        try:
+            publication = Publication.query.filter_by(id=id).first()
+            db.session.delete(publication)
+            db.session.commit()
+
+            return {"message": "Publication deleted."}, 200
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500

@@ -14,8 +14,8 @@ from src.authorization.user_authorization import userAuthorization
 from env import JWT_KEY
 
 
-
 @api.route('/commentary')
+@api.route('/commentary/<id>')
 class CommentaryRoute(Resource):
     
     @userAuthorization
@@ -55,6 +55,47 @@ class CommentaryRoute(Resource):
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
 
+    @userAuthorization
+    def put(self, id):
+        data = api.payload
+        text = None
+        try:
+            text = data['text']
+        except:
+            return {"error": "Missing data."}, 400
+
+        try:
+            commentary = Commentary.query.filter_by(id=id).first()
+            commentary.text = text
+            db.session.add(commentary)
+            db.session.commit()
+
+            response = {
+                "id": commentary.id,
+                "text": commentary.text,
+                "user_id": commentary.userId,
+                "publication_Id": commentary.publicationId,
+                "date": str(commentary.date)
+            }
+
+            return {"message": "Commentary updated.", "data": response}, 200
+            
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+    @userAuthorization
+    def delete(self, id):
+
+        try:
+            Commentary.query.filter_by(id=id).delete()
+            db.session.commit()
+
+            return {"message": "Commentary deleted."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+        
 @api.route('/commentary-by-publication/<id>')
 class CommentaryByPublicationRoute(Resource):
 

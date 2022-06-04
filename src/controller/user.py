@@ -2,7 +2,6 @@ from flask import request
 from flask_restx import Resource
 from datetime import datetime, timedelta
 import jwt
-
 from src.server.instance import api, db, bcrypt
 
 from src.models.user import User
@@ -12,6 +11,7 @@ from src.models.share import Share
 from src.models.follow import Follow
 
 from src.authorization.user_authorization import userAuthorization
+from src.authorization.admin_authorization import adminAuthorization
 from env import JWT_KEY
 
 
@@ -42,7 +42,19 @@ class ProfileRoute(Resource):
             return {"message": "Profile found.", "data": response}
         except Exception as err:
             print(str(err))
-            return {"error": "Error connecting to database. Try again later."}, 500        
+            return {"error": "Error connecting to database. Try again later."}, 500  
+
+    @adminAuthorization
+    def delete(self, username):
+        try:
+            user = User.query.filter_by(username=username).first()
+            db.session.delete(user)
+            db.session.commit()
+
+            return {"message": "User deleted."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500     
 
 @api.route('/alter-password/<id>')
 class AlterPasswordRoute(Resource):
