@@ -5,7 +5,8 @@ from src.server.instance import server
 
 from src.controller.authentication import SignUpRoute, SignInRoute
 from src.controller.user import AlterNameRoute, AlterPasswordRoute, ProfileRoute
-from src.controller.publication import PublicationsByUserRoute
+from src.controller.publication import PublicationsByUserRoute, PublicationRoute
+from src.controller.commentary import CommentaryRoute, CommentaryByPublicationRoute, CommentaryByUserRoute
 
 
 if __name__ == "__main__":

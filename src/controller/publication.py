@@ -13,6 +13,7 @@ from src.models.publication import Publication
 from src.models.commentary import Commentary
 from src.models.share import Share
 from src.models.seen import Seen
+from src.models.follow import Follow
 
 from src.authorization.user_authorization import userAuthorization
 from env import JWT_KEY
@@ -24,6 +25,7 @@ class PublicationRoute(Resource):
     @userAuthorization
     def get(self):
         userId = jwt.decode(request.headers.get('Authorization').split()[1], JWT_KEY, algorithms="HS256")['id']
+        reset = False
 
         try:
             publicationCount = Publication.query.count()
@@ -36,6 +38,7 @@ class PublicationRoute(Resource):
             if seenCount >= publicationCount:
                 Seen.query.filter_by(userId=userId).delete()
                 db.session.commit()
+                reset = True
                 publication = Publication.query.order_by(func.rand()).first()
             else:
                 publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).order_by(func.rand()).first()
@@ -51,7 +54,8 @@ class PublicationRoute(Resource):
                 "user_id": publication.userId,
                 "date": str(publication.date),
                 "commentaries_count": publication.commentary.count(),
-                "share_count": publication.share.count()
+                "share_count": publication.share.count(),
+                "reset_seen": reset
             }
 
             return {"message": "Publication retrieved.", "data": response}, 200
@@ -60,9 +64,6 @@ class PublicationRoute(Resource):
             return {"error": "Error connecting to database. Try again later."}, 500
 
 
-
-
-    
     @userAuthorization
     def post(self):
         data = api.payload
@@ -83,13 +84,71 @@ class PublicationRoute(Resource):
             db.session.add(publication)
             db.session.commit()
 
-            return {"message": "Posted.", "data": {"id": publication.id}}, 200
+            return {"message": "Posted.", "data": {"id": publication.id}}, 201
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
 
+
+@api.route('/publication-by-follow')
+class PublicationByFollowRoute(Resource):
+
+    @userAuthorization
+    def get(self):
+        userId = jwt.decode(request.headers.get('Authorization').split()[1], JWT_KEY, algorithms="HS256")['id']
+        reset = False
+
+        try:
+            followSubquery = db.session.query(Follow.userId).filter_by(follower=userId).subquery()
+            publicationCount = Publication.query.filter(Publication.userId.in_(followSubquery)).count()
+            publicationSubquery = db.session.query(Publication.id).filter(Publication.userId.in_(followSubquery)).subquery()
+            
+            seenCount = Seen.query.filter(Seen.publicationId.in_(publicationSubquery)).filter_by(userId=userId).count()
+            
+            seenSubquery = db.session.query(Seen.publicationId).filter_by(userId=userId).subquery()
+
+            publication = None
+
+            if seenCount >= publicationCount:
+                print(Seen.query.filter(Seen.publicationId.in_(publicationSubquery)).filter_by(userId=userId))
+                db.engine.execute(f"""
+                DELETE FROM seen WHERE publicationId IN (SELECT publication.id 
+                FROM publication 
+                WHERE publication.userId IN (SELECT anon_1.userId 
+                FROM (SELECT follow.userId AS userId 
+                FROM follow 
+                WHERE follow.follower = {userId}) AS anon_1));
+                """)
+                db.session.commit()
+                reset = True
+                publication = Publication.query.filter(Publication.userId.in_(followSubquery)).order_by(func.rand()).first()
+            else:
+                publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.in_(followSubquery)).order_by(func.rand()).first()
+
+            seen = Seen(publicationId=publication.id, userId=userId)
+            db.session.add(seen)
+            db.session.commit()
+
+            response = {
+                "id": publication.id,
+                "author": publication.author,
+                "text": publication.text,
+                "user_id": publication.userId,
+                "date": str(publication.date),
+                "commentaries_count": publication.commentary.count(),
+                "share_count": publication.share.count(),
+                "reset_seen": reset
+            }
+
+            return {"message": "Publication retrieved.", "data": response}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+
 @api.route('/publications-by-user/<id>')
 class PublicationsByUserRoute(Resource):
+
     def get(self, id):
         limit = 10
         page = 0

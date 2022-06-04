@@ -1,6 +1,5 @@
 from src.server.instance import db
-from sqlalchemy import func
-
+from datetime import datetime
 from src.models.commentary import Commentary
 from src.models.seen import Seen
 from src.models.share import Share
@@ -11,7 +10,7 @@ class Publication(db.Model):
      id = db.Column(db.Integer, primary_key=True)
      text = db.Column(db.String(1000))
      author = db.Column(db.String(20), nullable=True)
-     date = db.Column(db.DateTime, server_default=func.now())
+     date = db.Column(db.DateTime, default=datetime.utcnow)
      pinned = db.Column(db.BOOLEAN, default=False)
      userId = db.Column(db.Integer, db.ForeignKey('user.id'))
 

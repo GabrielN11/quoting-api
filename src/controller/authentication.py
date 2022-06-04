@@ -33,7 +33,7 @@ class SignUpRoute(Resource):
             db.session.add(user)
             db.session.commit()
 
-            token = jwt.encode({"id": user.id, 'admin': False, 'exp': datetime.utcnow() + timedelta(minutes=60)}, JWT_KEY, algorithm="HS256")
+            token = jwt.encode({"id": user.id, 'admin': False, 'exp': datetime.utcnow() + timedelta(days=60)}, JWT_KEY, algorithm="HS256")
             
             data = {
                 "id": user.id,
@@ -67,7 +67,7 @@ class SignInRoute(Resource):
             return {"error": "Invalid authentication."}, 400
 
         if bcrypt.check_password_hash(userData.password, password):
-            token = jwt.encode({"id": userData.id, 'admin': userData.admin, 'exp': datetime.utcnow() + timedelta(minutes=60)}, JWT_KEY, algorithm="HS256")
+            token = jwt.encode({"id": userData.id, 'admin': userData.admin, 'exp': datetime.utcnow() + timedelta(days=60)}, JWT_KEY, algorithm="HS256")
 
             user = {
                 "id": userData.id,

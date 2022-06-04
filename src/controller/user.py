@@ -1,5 +1,7 @@
+from flask import request
 from flask_restx import Resource
 from datetime import datetime, timedelta
+import jwt
 
 from src.server.instance import api, db, bcrypt
 
@@ -7,6 +9,7 @@ from src.models.user import User
 from src.models.publication import Publication
 from src.models.commentary import Commentary
 from src.models.share import Share
+from src.models.follow import Follow
 
 from src.authorization.user_authorization import userAuthorization
 from env import JWT_KEY
@@ -101,5 +104,20 @@ class AlterNameRoute(Resource):
             return {"message": "Name updated."}, 200
         except Exception as err:
             print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+@api.route('/follow/<id>')
+class FollowRoute(Resource):
+
+    @userAuthorization
+    def post(self, id):
+        userId = jwt.decode(request.headers.get('Authorization').split()[1], JWT_KEY, algorithms="HS256")['id']
+        try:
+            follow = Follow(follower=userId, userId=id)
+            db.session.add(follow)
+            db.session.commit()
+
+            return {"message": "User followed."}, 201
+        except Exception as err:
             return {"error": "Error connecting to database. Try again later."}, 500
         
