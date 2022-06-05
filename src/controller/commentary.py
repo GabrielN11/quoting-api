@@ -85,9 +85,9 @@ class CommentaryRoute(Resource):
 
     @userAuthorization
     def delete(self, id):
-
         try:
-            Commentary.query.filter_by(id=id).delete()
+            commentary = Commentary.query.filter_by(id=id).first()
+            db.session.delete(commentary)
             db.session.commit()
 
             return {"message": "Commentary deleted."}, 200

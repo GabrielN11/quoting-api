@@ -30,6 +30,7 @@ class ProfileRoute(Resource):
             pinnedPublication = Publication.query.filter_by(pinned=True).first()
 
             response = {
+                "id": user.id,
                 "username": user.username,
                 "name": user.name,
                 "publication_count": publicationCount,
@@ -41,19 +42,7 @@ class ProfileRoute(Resource):
             return {"message": "Profile found.", "data": response}
         except Exception as err:
             print(str(err))
-            return {"error": "Error connecting to database. Try again later."}, 500  
-
-    @adminAuthorization
-    def delete(self, username):
-        try:
-            user = User.query.filter_by(username=username).first()
-            db.session.delete(user)
-            db.session.commit()
-
-            return {"message": "User deleted."}, 200
-        except Exception as err:
-            print(str(err))
-            return {"error": "Error connecting to database. Try again later."}, 500     
+            return {"error": "Error connecting to database. Try again later."}, 500    
 
 @api.route('/alter-password/<id>')
 class AlterPasswordRoute(Resource):

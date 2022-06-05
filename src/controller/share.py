@@ -93,3 +93,16 @@ class ShareRoute(Resource):
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
+
+    def delete(self, id):
+        share = Share.query.filter_by(id=id).first()
+        if share == None:
+            return {"error": "Shared content not found."}, 400
+
+        try:
+            db.session.delete(share)
+            db.session.commit()
+            return {"message": "Share removed."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
