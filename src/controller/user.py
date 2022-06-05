@@ -1,6 +1,5 @@
 from flask import request
 from flask_restx import Resource
-from datetime import datetime, timedelta
 import jwt
 from src.server.instance import api, db, bcrypt
 

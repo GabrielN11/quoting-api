@@ -7,6 +7,7 @@ from src.controller.authentication import SignUpRoute, SignInRoute
 from src.controller.user import AlterNameRoute, AlterPasswordRoute, ProfileRoute
 from src.controller.publication import PublicationsByUserRoute, PublicationRoute
 from src.controller.commentary import CommentaryRoute, CommentaryByPublicationRoute, CommentaryByUserRoute
+from src.controller.share import ShareRoute
 
 
 if __name__ == "__main__":

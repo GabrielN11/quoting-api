@@ -2,11 +2,11 @@ from flask import request
 from flask_restx import Resource
 from datetime import datetime, timedelta
 import jwt
-from random import randint
 
 from sqlalchemy import desc, func
 
-from src.server.instance import api, db, bcrypt
+from src.server.instance import api, db
+from src.utils.dateConvertion import DateConvertion
 
 from src.models.user import User
 from src.models.publication import Publication
@@ -18,6 +18,8 @@ from src.models.follow import Follow
 from src.authorization.user_authorization import userAuthorization
 from src.authorization.admin_authorization import adminAuthorization
 from env import JWT_KEY
+
+dateConvertion = DateConvertion()
 
 
 @api.route('/publication')
@@ -80,8 +82,11 @@ class PublicationRoute(Resource):
         except:
             return {"error": "Missing data."}, 400
 
-        publication = Publication(text=text, userId=userId, author=author)
+        lastPublication = Publication.query.filter_by(userId=userId).order_by(desc(Publication.date)).first()
+        if lastPublication and (lastPublication.date + timedelta(minutes=5)) >= datetime.utcnow():
+            return {"error": "Wait 5 minutes between each publication."}, 400
 
+        publication = Publication(text=text, userId=userId, author=author)
         try:
             db.session.add(publication)
             db.session.commit()

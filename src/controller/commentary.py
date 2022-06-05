@@ -1,9 +1,8 @@
 from flask import request
 from flask_restx import Resource
-from datetime import datetime, timedelta
 from sqlalchemy import desc
 
-from src.server.instance import api, db, bcrypt
+from src.server.instance import api, db
 
 from src.models.user import User
 from src.models.publication import Publication
