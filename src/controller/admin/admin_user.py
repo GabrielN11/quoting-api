@@ -11,7 +11,6 @@ from src.models.commentary import Commentary
 from src.models.share import Share
 from src.models.follow import Follow
 
-from src.authorization.user_authorization import userAuthorization
 from src.authorization.admin_authorization import adminAuthorization
 from env import JWT_KEY
 
@@ -69,6 +68,8 @@ class AdminUserRoute(Resource):
 
 @api.route('/admin-user-list')
 class AdminUserListRoute(Resource):
+
+    @adminAuthorization
     def get(self):
         searchQuery = request.args.get('search')
         page = 0
