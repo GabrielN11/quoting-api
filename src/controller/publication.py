@@ -32,7 +32,9 @@ class PublicationRoute(Resource):
         reset = False
 
         try:
-            publicationCount = Publication.query.count()
+            activeSubquery = db.session.query(User.id).filter_by(active=False).subquery()
+            publicationCount = Publication.query.filter(Publication.userId.not_in(activeSubquery)).count()
+            print(publicationCount)
             seenCount = Seen.query.filter_by(userId=userId).count()
             
             seenSubquery = db.session.query(Seen.publicationId).filter_by(userId=userId).subquery()
@@ -43,9 +45,12 @@ class PublicationRoute(Resource):
                 Seen.query.filter_by(userId=userId).delete()
                 db.session.commit()
                 reset = True
-                publication = Publication.query.order_by(func.rand()).first()
+                publication = Publication.query.order_by(func.rand()).filter(Publication.userId.not_in(activeSubquery)).first()
             else:
-                publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).order_by(func.rand()).first()
+                publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.not_in(activeSubquery)).order_by(func.rand()).first()
+
+            if publication == None:
+                return 204
 
             seen = Seen(publicationId=publication.id, userId=userId)
             db.session.add(seen)
@@ -146,9 +151,10 @@ class PublicationByFollowRoute(Resource):
         reset = False
 
         try:
+            activeSubquery = db.session.query(User.id).filter_by(active=False).subquery()
             followSubquery = db.session.query(Follow.userId).filter_by(follower=userId).subquery()
-            publicationCount = Publication.query.filter(Publication.userId.in_(followSubquery)).count()
-            publicationSubquery = db.session.query(Publication.id).filter(Publication.userId.in_(followSubquery)).subquery()
+            publicationCount = Publication.query.filter(Publication.userId.in_(followSubquery)).filter(Publication.userId.not_in(activeSubquery)).count()
+            publicationSubquery = db.session.query(Publication.id).filter(Publication.userId.in_(followSubquery)).filter(Publication.userId.not_in(activeSubquery)).subquery()
             
             seenCount = Seen.query.filter(Seen.publicationId.in_(publicationSubquery)).filter_by(userId=userId).count()
             
@@ -157,7 +163,6 @@ class PublicationByFollowRoute(Resource):
             publication = None
 
             if seenCount >= publicationCount:
-                print(Seen.query.filter(Seen.publicationId.in_(publicationSubquery)).filter_by(userId=userId))
                 db.engine.execute(f"""
                 DELETE FROM seen WHERE publicationId IN (SELECT publication.id 
                 FROM publication 
@@ -168,10 +173,12 @@ class PublicationByFollowRoute(Resource):
                 """)
                 db.session.commit()
                 reset = True
-                publication = Publication.query.filter(Publication.userId.in_(followSubquery)).order_by(func.rand()).first()
+                publication = Publication.query.filter(Publication.userId.in_(followSubquery)).filter(Publication.userId.not_in(activeSubquery)).order_by(func.rand()).first()
             else:
-                publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.in_(followSubquery)).order_by(func.rand()).first()
-
+                publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.in_(followSubquery)).filter(Publication.userId.not_in(activeSubquery)).order_by(func.rand()).first()
+            if publication == None:
+                return 204
+            
             seen = Seen(publicationId=publication.id, userId=userId)
             db.session.add(seen)
             db.session.commit()
@@ -205,6 +212,9 @@ class PublicationsByUserRoute(Resource):
         except:
             return {"error": "Page not informed correctly."}, 400
 
+        user = User.query.filter_by(id=id).first()
+        if user.active == False:
+            return {"error": "This user is banned."}, 403
 
         try:
             publications = Publication.query.filter(Publication.userId == id).order_by(desc(Publication.date)).limit(limit).offset(page).all()
@@ -236,6 +246,11 @@ class PublicationByIdRoute(Resource):
             publication = Publication.query.filter_by(id=id).first()
             if publication == None:
                 return {"error": "Publication not found."}, 400
+
+            user = User.query.filter_by(id=publication.userId).first()
+            if user.active == False:
+                return {"error": "This user is banned."}, 403
+
             response = {
                 "id": publication.id,
                 "author": publication.author,

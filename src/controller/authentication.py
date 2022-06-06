@@ -69,6 +69,9 @@ class SignInRoute(Resource):
         if bcrypt.check_password_hash(userData.password, password):
             token = jwt.encode({"id": userData.id, 'admin': userData.admin, 'exp': datetime.utcnow() + timedelta(days=60)}, JWT_KEY, algorithm="HS256")
 
+            if userData.active == False:
+                return {"error": "This account is banned."}, 403
+
             user = {
                 "id": userData.id,
                 "username": username,

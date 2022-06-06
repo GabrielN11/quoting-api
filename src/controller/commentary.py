@@ -107,9 +107,10 @@ class CommentaryByPublicationRoute(Resource):
         except:
             return {"error": "Page not informed correctly."}, 400
 
+        activeSubquery = db.session.query(User.id).filter_by(active=False).subquery()
 
         try:
-            commentaries = Commentary.query.filter(Commentary.publicationId == id).order_by(desc(Commentary.date)).limit(limit).offset(page).all()
+            commentaries = Commentary.query.filter(Commentary.publicationId == id).filter(Commentary.userId.not_in(activeSubquery)).order_by(desc(Commentary.date)).limit(limit).offset(page).all()
             
             if len(commentaries) == 0:
                 return 204
@@ -141,6 +142,9 @@ class CommentaryByUserRoute(Resource):
         except:
             return {"error": "Page not informed correctly."}, 400
 
+        user = User.query.filter_by(id=id).first()
+        if user.active == False:
+            return {"error": "This user is banned."}, 403
 
         try:
             commentaries = Commentary.query.filter(Commentary.userId == id).order_by(desc(Commentary.date)).limit(limit).offset(page).all()

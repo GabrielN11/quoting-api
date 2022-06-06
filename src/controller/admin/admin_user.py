@@ -1,4 +1,3 @@
-from operator import or_
 from flask import request
 from flask_restx import Resource
 import jwt
@@ -18,6 +17,30 @@ from env import JWT_KEY
 
 @api.route('/admin-user/<id>')
 class AdminUserRoute(Resource):
+
+    @adminAuthorization
+    def post(self, id):
+        data = api.payload
+        status = None
+        try:
+            status = data['status']
+        except:
+            return {"error": "Missing data."}, 400
+
+        user = User.query.filter_by(id=id).first()
+        text = 'banned' if status == False else 'active'
+        if user.active == status:
+            return {"error": f"User is already {text}."}, 400
+        
+        try:
+            user.active = status
+            db.session.add(user)
+            db.session.commit()
+
+            return {"message": f"User {text}."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
 
     @adminAuthorization
     def put(self, id):
@@ -47,6 +70,7 @@ class AdminUserRoute(Resource):
                 "id": user.id,
                 "username": user.username,
                 "name": user.name,
+                "active": user.active,
                 "is_admin": user.admin
             }
             return {"message": "User updated", "data": response}, 200
@@ -92,6 +116,7 @@ class AdminUserListRoute(Resource):
             response = list(map(lambda user: {
                 "name": user.name,
                 "username": user.username,
+                "active": user.active,
                 "is_admin": user.admin
             }, users))
 

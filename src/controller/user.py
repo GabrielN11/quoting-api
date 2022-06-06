@@ -33,6 +33,8 @@ class ProfileRoute(Resource):
                 "id": user.id,
                 "username": user.username,
                 "name": user.name,
+                "is_admin": user.admin,
+                "active": user.active,
                 "publication_count": publicationCount,
                 "commentary_count": commentaryCount,
                 "share_count": shareCount,

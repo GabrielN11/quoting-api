@@ -26,6 +26,10 @@ class ShareRoute(Resource):
         except:
             return {"error": "Page not informed correctly."}, 400
 
+        user = User.query.filter_by(id=id).first()
+        if user.active == False:
+            return {"error": "This user is banned."}, 403
+
         try:
             shares = Share.query.filter_by(userId=id).limit(limit).offset(page).all()
 

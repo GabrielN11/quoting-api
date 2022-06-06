@@ -13,6 +13,7 @@ class User(db.Model):
      name = db.Column(db.String(25), default='Anonymous')
      password = db.Column(db.String(100))
      admin = db.Column(db.BOOLEAN, default=False)
+     active = db.Column(db.BOOLEAN, default=True)
      
      publication = db.relationship('Publication', cascade="all, delete")
      seen = db.relationship('Seen', cascade="all, delete", lazy='dynamic')
