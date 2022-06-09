@@ -1,3 +1,4 @@
+from flask import request
 from flask_restx import Resource
 from datetime import datetime, timedelta
 import jwt
@@ -50,6 +51,27 @@ class SignUpRoute(Resource):
 
 @api.route('/sign-in')
 class SignInRoute(Resource):
+
+    @userAuthorization
+    def get(self):
+        userId = jwt.decode(request.headers.get('Authorization').split()[1], JWT_KEY, algorithms="HS256")['id']
+
+        try:
+            userData = User.query.filter_by(id=userId).first()
+            if userData == None:
+                return {"error": "User not found"}, 400
+
+            user = {
+                "id": userData.id,
+                "username": userData.username,
+                "name": userData.name,
+                "is_admin": userData.admin,
+            }
+            return {"message": "User data retrieved", "data": user}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
     def post(self):
         data = api.payload
         username = None
