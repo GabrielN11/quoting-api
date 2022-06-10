@@ -87,6 +87,11 @@ class PublicationRoute(Resource):
         except:
             return {"error": "Missing data."}, 400
 
+        if len(text) > 1000:
+            return {"error": "Text is too long."}, 400
+        if len(author) > 20:
+            return {"error": "Author name is too long"}, 400
+
         lastPublication = Publication.query.filter_by(userId=userId).order_by(desc(Publication.date)).first()
         if lastPublication and (lastPublication.date + timedelta(minutes=5)) >= datetime.utcnow():
             return {"error": "Wait 5 minutes between each publication."}, 400
@@ -96,7 +101,18 @@ class PublicationRoute(Resource):
             db.session.add(publication)
             db.session.commit()
 
-            return {"message": "Posted.", "data": {"id": publication.id}}, 201
+            response = {
+                "id": publication.id,
+                "author": publication.author,
+                "text": publication.text,
+                "user_id": publication.userId,
+                "date": str(publication.date),
+                "commentaries_count": publication.commentary.count(),
+                "share_count": publication.share.count(),
+                "reset_seen": False
+            }
+
+            return {"message": "Posted.", "data": response}, 201
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500

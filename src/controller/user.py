@@ -15,11 +15,11 @@ from env import JWT_KEY
 
 
 
-@api.route('/profile/<username>')
+@api.route('/profile/<id>')
 class ProfileRoute(Resource):
-    def get(self, username):
+    def get(self, id):
         try:
-            user = User.query.filter_by(username=username).first()
+            user = User.query.filter_by(id=id).first()
 
             if user == None:
                 return {"error": "Profile not found."}, 400
