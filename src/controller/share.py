@@ -1,7 +1,6 @@
 from flask import request
 from flask_restx import Resource
-from datetime import datetime, timedelta
-from sqlalchemy import desc
+import jwt
 
 from src.server.instance import api, db, bcrypt
 
@@ -93,7 +92,7 @@ class ShareRoute(Resource):
             db.session.add(share)
             db.session.commit()
 
-            return {"message": "Content shared in your profile."}, 200
+            return {"message": "Content shared in your profile.", "data": share.id}, 200
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
@@ -110,3 +109,20 @@ class ShareRoute(Resource):
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
+
+@api.route('/share-by-publication/<id>/<type>')
+class ShareByPublication(Resource):
+
+    @userAuthorization
+    def get(self, id, type):
+        userId = userId = jwt.decode(request.headers.get('Authorization').split()[1], JWT_KEY, algorithms="HS256")['id']
+        if type == 'publication':
+            share = Share.query.filter(Share.userId == userId).filter_by(publicationId=id).first()
+            if share == None:
+                return 204
+            return {"data": share.id}, 200
+        else:
+            share = Share.query.filter(Share.userId == userId).filter_by(commentaryId=id).first()
+            if share == None:
+                return 204
+            return {"data": share.id}, 200
