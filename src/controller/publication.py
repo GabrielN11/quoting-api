@@ -236,7 +236,7 @@ class PublicationsByUserRoute(Resource):
             publications = Publication.query.filter(Publication.userId == id).order_by(desc(Publication.date)).limit(limit).offset(page).all()
             
             if len(publications) == 0:
-                return 204
+                return None, 204
             
             responseArray = list(map(lambda publication: {
                 "id": publication.id,

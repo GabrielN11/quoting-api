@@ -32,6 +32,9 @@ class ShareRoute(Resource):
         try:
             shares = Share.query.filter_by(userId=id).limit(limit).offset(page).all()
 
+            if len(shares) == 0:
+                return None, 204
+
             def getContent(share):
                 if share.publicationId:
                     publication = Publication.query.filter_by(id=share.publicationId).first()

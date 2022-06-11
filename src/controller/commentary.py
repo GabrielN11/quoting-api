@@ -152,7 +152,7 @@ class CommentaryByUserRoute(Resource):
             commentaries = Commentary.query.filter(Commentary.userId == id).order_by(desc(Commentary.date)).limit(limit).offset(page).all()
             
             if len(commentaries) == 0:
-                return 204
+                return None, 204
             
             responseArray = list(map(lambda commentary: {
                 "id": commentary.id,
