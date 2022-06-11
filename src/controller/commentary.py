@@ -45,6 +45,7 @@ class CommentaryRoute(Resource):
                 "date": str(commentary.date),
                 "text": commentary.text,
                 "user_id": commentary.userId,
+                "share_count": commentary.share.count(),
                 "publication_id": commentary.publicationId
             }
 
@@ -120,6 +121,7 @@ class CommentaryByPublicationRoute(Resource):
                 "text": commentary.text,
                 "user_id": commentary.userId,
                 "publication_id": commentary.publicationId,
+                "share_count": commentary.share.count(),
                 "date": str(commentary.date),
             }, commentaries))
 
