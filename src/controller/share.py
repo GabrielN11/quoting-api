@@ -1,6 +1,7 @@
 from flask import request
 from flask_restx import Resource
 import jwt
+from sqlalchemy import desc
 
 from src.server.instance import api, db, bcrypt
 
@@ -30,7 +31,7 @@ class ShareRoute(Resource):
             return {"error": "This user is banned."}, 403
 
         try:
-            shares = Share.query.filter_by(userId=id).limit(limit).offset(page).all()
+            shares = Share.query.filter_by(userId=id).order_by(desc(Share.date)).limit(limit).offset(page).all()
 
             if len(shares) == 0:
                 return None, 204

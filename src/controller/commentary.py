@@ -1,5 +1,6 @@
 from flask import request
 from flask_restx import Resource
+from datetime import datetime, timedelta
 from sqlalchemy import desc
 
 from src.server.instance import api, db
@@ -33,6 +34,10 @@ class CommentaryRoute(Resource):
 
         if Publication.query.filter_by(id=publicationId).count() < 1 and User.query.filter_by(id=userId).count() < 1:
             return {"error": "Invalid publication or user."}, 400
+
+        lastCommentary = Commentary.query.filter_by(userId=userId).filter_by(publicationId=publicationId).order_by(desc(Commentary.date)).first()
+        if lastCommentary and (lastCommentary.date + timedelta(minutes=5)) >= datetime.utcnow():
+            return {"error": "Wait 5 minutes between each commentary."}, 400
         
         commentary = Commentary(userId=userId, publicationId=publicationId, text=text)
 

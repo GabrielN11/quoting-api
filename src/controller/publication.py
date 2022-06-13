@@ -61,6 +61,7 @@ class PublicationRoute(Resource):
                 "text": publication.text,
                 "user_id": publication.userId,
                 "date": str(publication.date),
+                "pinned": publication.pinned,
                 "commentaries_count": publication.commentary.count(),
                 "share_count": publication.share.count(),
                 "reset_seen": reset

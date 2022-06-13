@@ -1,4 +1,5 @@
 from src.server.instance import db
+from datetime import datetime
 
 class Share(db.Model):
      __tablename__ = "share"
@@ -7,3 +8,4 @@ class Share(db.Model):
      userId = db.Column(db.Integer, db.ForeignKey('user.id'))
      publicationId = db.Column(db.Integer, db.ForeignKey('publication.id'), nullable=True)
      commentaryId = db.Column(db.Integer, db.ForeignKey('commentary.id'), nullable=True)
+     date = db.Column(db.DateTime, default=datetime.utcnow)
