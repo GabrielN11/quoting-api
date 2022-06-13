@@ -111,7 +111,7 @@ class AdminUserListRoute(Resource):
                 users = User.query.limit(limit).offset(page).all()
 
             if len(users) < 1:
-                return 204
+                return None, 204
         
             response = list(map(lambda user: {
                 "name": user.name,
