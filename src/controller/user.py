@@ -27,7 +27,7 @@ class ProfileRoute(Resource):
             publicationCount = Publication.query.filter_by(userId=user.id).count()
             commentaryCount = Commentary.query.filter_by(userId=user.id).count()
             shareCount = Share.query.filter_by(userId=user.id).count()
-            pinnedPublication = Publication.query.filter_by(pinned=True).first()
+            pinnedPublication = Publication.query.filter_by(pinned=True).filter_by(userId=id).first()
 
             response = {
                 "id": user.id,

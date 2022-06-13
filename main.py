@@ -5,7 +5,7 @@ from src.server.instance import server
 
 from src.controller.authentication import SignUpRoute, SignInRoute
 from src.controller.user import AlterNameRoute, AlterPasswordRoute, ProfileRoute
-from src.controller.publication import PublicationsByUserRoute, PublicationRoute, PublicationByFollowRoute, PublicationByIdRoute
+from src.controller.publication import PublicationsByUserRoute, PublicationRoute, PublicationByFollowRoute, PublicationByIdRoute, PinRoute
 from src.controller.commentary import CommentaryRoute, CommentaryByPublicationRoute, CommentaryByUserRoute
 from src.controller.share import ShareRoute, ShareByPublication
 from src.controller.admin.admin_user import AdminUserRoute, AdminUserListRoute

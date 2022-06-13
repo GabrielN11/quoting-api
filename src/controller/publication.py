@@ -34,7 +34,6 @@ class PublicationRoute(Resource):
         try:
             activeSubquery = db.session.query(User.id).filter_by(active=False).subquery()
             publicationCount = Publication.query.filter(Publication.userId.not_in(activeSubquery)).count()
-            print(publicationCount)
             seenCount = Seen.query.filter_by(userId=userId).count()
             
             seenSubquery = db.session.query(Seen.publicationId).filter_by(userId=userId).subquery()
@@ -89,7 +88,7 @@ class PublicationRoute(Resource):
 
         if len(text) > 1000:
             return {"error": "Text is too long."}, 400
-        if len(author) > 20:
+        if author and len(author) > 20:
             return {"error": "Author name is too long"}, 400
 
         lastPublication = Publication.query.filter_by(userId=userId).order_by(desc(Publication.date)).first()
@@ -121,14 +120,17 @@ class PublicationRoute(Resource):
     def put(self, id):
         data = api.payload
         text = None
+        author = None
         try:
             text = data['text']
+            author = data['author']
         except:
             return {"error": "Missing data."}, 400
 
         try:
             publication = Publication.query.filter_by(id=id).first()
             publication.text = text
+            publication.author = author
             db.session.add(publication)
             db.session.commit()
             response = {
@@ -273,6 +275,7 @@ class PublicationByIdRoute(Resource):
                 "text": publication.text,
                 "user_id": publication.userId,
                 "date": str(publication.date),
+                "pinned": publication.pinned,
                 "commentaries_count": publication.commentary.count(),
                 "share_count": publication.share.count()
             }
@@ -281,4 +284,52 @@ class PublicationByIdRoute(Resource):
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
+
+@api.route('/pin/<id>')
+class PinRoute(Resource):
+
+    @userAuthorization
+    def put(self, id):
+        data = api.payload
+        userId = None
+
+        try:
+            userId = data['user_id']
+
+        except:
+            return {"error": "Missing data."}, 400
+
+        try:
+            pinned = Publication.query.filter_by(userId=userId).first()
+            if pinned:
+                pinned.pinned = False
+                db.session.add(pinned)
+
+            publication = Publication.query.filter_by(id=id).first()
+            
+            if(publication == None):
+                return {"error": "Publication does not exists."}, 400
+
+            publication.pinned = True
+
+            db.session.add(pinned)
+            db.session.commit()
+
+            return {"message": "Publication pinned in your profile."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+    @userAuthorization
+    def delete(self, id):
+        try:
+            publication = Publication.query.filter_by(id=id).first()
+            publication.pinned = False
+            db.session.add(publication)
+            db.session.commit()
+            return {"message": "Publication unpinned."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
 
