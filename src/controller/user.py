@@ -79,6 +79,8 @@ class AlterPasswordRoute(Resource):
             except Exception as err:
                 print(str(err))
                 return {"error": "Error connecting to database. Try again later."}, 500
+        else:
+            return {"error": "Invalid password."}, 400
 
 @api.route('/alter-name/<id>')
 class AlterNameRoute(Resource):
