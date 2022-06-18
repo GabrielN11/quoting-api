@@ -43,42 +43,6 @@ class AdminUserRoute(Resource):
             return {"error": "Error connecting to database. Try again later."}, 500
 
     @adminAuthorization
-    def put(self, id):
-        data = api.payload
-        user = User.query.filter_by(id=id).first()
-        if user == None:
-            return {"error": "User not found."}, 400
-
-        try:
-            username = data['username']
-            name = data['name']
-            password = data['password']
-            admin = data['is_admin']
-        except:
-            return {"error": "Missing data."}, 400
-
-        user.username = username
-        user.name = name
-        user.password = bcrypt.generate_password_hash(password).decode('utf-8')
-        user.admin = admin
-
-        try:
-            db.session.add(user)
-            db.session.commit()
-
-            response = {
-                "id": user.id,
-                "username": user.username,
-                "name": user.name,
-                "active": user.active,
-                "is_admin": user.admin
-            }
-            return {"message": "User updated", "data": response}, 200
-        except Exception as err:
-            print(str(err))
-            return {"error": "Error connecting to database. Try again later."}, 500
-
-    @adminAuthorization
     def delete(self, id):
         try:
             user = User.query.filter_by(id=id).first()
@@ -114,6 +78,7 @@ class AdminUserListRoute(Resource):
                 return None, 204
         
             response = list(map(lambda user: {
+                "id": user.id,
                 "name": user.name,
                 "username": user.username,
                 "active": user.active,
@@ -125,4 +90,111 @@ class AdminUserListRoute(Resource):
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
 
+@api.route('/set-admin/<id>')
+class SetAdminRoute(Resource):
+    
+    @adminAuthorization
+    def put(self, id):
+        user = User.query.filter_by(id=id).first()
+        if user == None:
+            return {"error": "User not found."}, 400
+        
+        if user.admin:
+            user.admin = False
+        else:
+            user.admin = True
 
+        try:
+            db.session.add(user)
+            db.session.commit()
+
+            text = f"{user.name} has admin privileges now." if user.admin else f"{user.name} is not an admin anymore."
+            
+            return {"message": text}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+@api.route('/change-password/<id>')
+class AdminChangePasswordRoute(Resource):
+    
+    @adminAuthorization
+    def put(self, id):
+        data = api.payload
+        password = None
+        try:
+            password = data['password']
+        except:
+            return {"error": "Missing data."}
+
+        user = User.query.filter_by(id=id).first()
+        if user == None:
+            return {"error": "User not found."}, 400
+        
+        hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        user.password = hashed_pw
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            
+            return {"message": f"{user.name}'s password changed."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+@api.route('/change-name/<id>')
+class AdminChangeNameRoute(Resource):
+    
+    @adminAuthorization
+    def put(self, id):
+        data = api.payload
+        name = None
+        try:
+            name = data['name']
+        except:
+            return {"error": "Missing data."}
+
+        user = User.query.filter_by(id=id).first()
+        if user == None:
+            return {"error": "User not found."}, 400
+
+        user.name = name
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            
+            return {"message": f"{user.username}'s name changed."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+
+@api.route('/change-username/<id>')
+class AdminChangeUsernameRoute(Resource):
+    
+    @adminAuthorization
+    def put(self, id):
+        data = api.payload
+        username = None
+        try:
+            username = data['username']
+        except:
+            return {"error": "Missing data."}
+
+        user = User.query.filter_by(id=id).first()
+        if user == None:
+            return {"error": "User not found."}, 400
+
+        user.username = username
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            
+            return {"message": "Username changed."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
