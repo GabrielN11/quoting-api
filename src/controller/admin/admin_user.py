@@ -90,6 +90,42 @@ class AdminUserListRoute(Resource):
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
 
+@api.route('/admin-banned-list')
+class AdminBannedListRoute(Resource):
+
+    @adminAuthorization
+    def get(self):
+        searchQuery = request.args.get('search')
+        page = 0
+        limit = 20
+        try:
+            page = int(request.args.get('page')) * 10
+        except:
+            return {"error": "Page not informed."}, 400
+
+        try:
+            users = []
+            if searchQuery:
+                users = User.query.filter(or_(User.name.ilike("%"+searchQuery.lower()+"%"), User.username.ilike(("%"+searchQuery.lower()+"%")))).filter_by(active=False).limit(limit).offset(page).all()
+            else:
+                users = User.query.filter_by(active=False).limit(limit).offset(page).all()
+
+            if len(users) < 1:
+                return None, 204
+        
+            response = list(map(lambda user: {
+                "id": user.id,
+                "name": user.name,
+                "username": user.username,
+                "active": user.active,
+                "is_admin": user.admin
+            }, users))
+
+            return {"message": "Banned users retrieved.", "data": response}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
 @api.route('/set-admin/<id>')
 class SetAdminRoute(Resource):
     
