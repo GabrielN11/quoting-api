@@ -15,8 +15,8 @@ class Server:
         self.bcrypt = Bcrypt(self.app)
         self.api = Api(self.app, 
             version='1.0',
-            title='API',
-            description='API.',
+            title='Quoting API',
+            description="Quoting App's Restful API.",
             doc='/docs'
         )
 
