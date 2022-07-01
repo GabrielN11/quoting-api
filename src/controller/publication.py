@@ -43,12 +43,16 @@ class PublicationRoute(Resource):
             if seenCount >= publicationCount:
                 Seen.query.filter_by(userId=userId).delete()
                 db.session.commit()
-                return {"message": 'Seens reseted'}, 200
+                publication = Publication.query.order_by(func.rand()).filter(Publication.userId.not_in(activeSubquery)).first()
+                reset = True
             else:
                 publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.not_in(activeSubquery)).order_by(func.rand()).first()
 
             if publication == None:
                 return None, 204
+
+            if reset == True:
+                return {"message": 'Seens reseted'}, 200
 
             seen = Seen(publicationId=publication.id, userId=userId)
             db.session.add(seen)
@@ -190,11 +194,16 @@ class PublicationByFollowRoute(Resource):
                 WHERE follow.follower = {userId}) AS anon_1));
                 """)
                 db.session.commit()
-                return {"message": 'Seens reseted'}, 200
+                publication = Publication.query.filter(Publication.userId.in_(followSubquery)).filter(Publication.userId.not_in(activeSubquery)).order_by(func.rand()).first()
+                reset = True
             else:
                 publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.in_(followSubquery)).filter(Publication.userId.not_in(activeSubquery)).order_by(func.rand()).first()
+
             if publication == None:
-                return 204
+                return None, 204
+
+            if reset == True:
+                return {"message": 'Seens reseted.'}, 200
             
             seen = Seen(publicationId=publication.id, userId=userId)
             db.session.add(seen)
@@ -208,7 +217,6 @@ class PublicationByFollowRoute(Resource):
                 "date": str(publication.date),
                 "commentaries_count": publication.commentary.count(),
                 "share_count": publication.share.count(),
-                "reset_seen": reset
             }
 
             return {"message": "Publication retrieved.", "data": response}, 200
