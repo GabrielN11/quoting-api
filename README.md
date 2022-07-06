@@ -21,6 +21,7 @@ This is the Restful API of my Quoting application using Flask and SQL Alchemy. A
 
 - E-mail validation to sign up account;
 - Better authorization for specific routes;
+- Categories;
 - ...
 
 
