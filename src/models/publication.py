@@ -3,6 +3,7 @@ from datetime import datetime
 from src.models.commentary import Commentary
 from src.models.seen import Seen
 from src.models.share import Share
+from src.models.category import Category
 
 class Publication(db.Model):
      __tablename__ = "publication"
@@ -13,6 +14,7 @@ class Publication(db.Model):
      date = db.Column(db.DateTime, default=datetime.utcnow)
      pinned = db.Column(db.BOOLEAN, default=False)
      userId = db.Column(db.Integer, db.ForeignKey('user.id'))
+     categoryId = db.Column(db.Integer, db.ForeignKey('category.id'))
 
      commentary = db.relationship('Commentary', cascade="all, delete", lazy='dynamic')
      share = db.relationship("Share", cascade="all, delete", lazy='dynamic')

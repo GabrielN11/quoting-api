@@ -11,6 +11,7 @@ from src.controller.share import ShareRoute, ShareByPublication
 from src.controller.admin.admin_user import AdminUserRoute, AdminUserListRoute, SetAdminRoute, AdminChangePasswordRoute, AdminChangeUsernameRoute, AdminChangeNameRoute
 from src.controller.admin.admin_publication import AdminPublicationRoute
 from src.controller.follow import FollowRoute, FollowersRoute, FollowingRoute
+from src.controller.category import CategoryRoute
 
 
 if __name__ == "__main__":

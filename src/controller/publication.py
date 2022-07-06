@@ -14,6 +14,7 @@ from src.models.commentary import Commentary
 from src.models.share import Share
 from src.models.seen import Seen
 from src.models.follow import Follow
+from src.models.category import Category
 
 from src.authorization.user_authorization import userAuthorization
 from src.authorization.admin_authorization import adminAuthorization
@@ -30,29 +31,42 @@ class PublicationRoute(Resource):
     def get(self):
         userId = jwt.decode(request.headers.get('Authorization').split()[1], JWT_KEY, algorithms="HS256")['id']
         reset = False
-
+        category = request.args.get('category')
+        if category:
+            try:
+                category = int(category)
+            except:
+                return {"error": "Invalid category"}, 400
+            categoryExists = Category.query.filter_by(id=category).first()
+            if not categoryExists:
+                return {"error": "Category doesn't exists."}, 400
+        else:
+            category = Publication.categoryId
+        
         try:
             activeSubquery = db.session.query(User.id).filter_by(active=False).subquery()
-            publicationCount = Publication.query.filter(Publication.userId.not_in(activeSubquery)).count()
-            seenCount = Seen.query.filter_by(userId=userId).count()
+            publicationCount = Publication.query.filter(Publication.userId.not_in(activeSubquery)).filter_by(categoryId=category).count()
+            publicationSubquery = db.session.query(Publication.id).filter(Publication.categoryId == category).filter(Publication.userId.not_in(activeSubquery)).subquery()
+            
+            seenCount = Seen.query.filter(Seen.publicationId.in_(publicationSubquery)).filter_by(userId=userId).count()
             
             seenSubquery = db.session.query(Seen.publicationId).filter_by(userId=userId).subquery()
 
             publication = None
 
             if seenCount >= publicationCount:
-                Seen.query.filter_by(userId=userId).delete()
+                Seen.query.filter(Seen.publicationId.in_(publicationSubquery)).filter_by(userId=userId).delete(synchronize_session='fetch')
                 db.session.commit()
-                publication = Publication.query.order_by(func.rand()).filter(Publication.userId.not_in(activeSubquery)).first()
+                publication = Publication.query.order_by(func.rand()).filter(Publication.userId.not_in(activeSubquery)).filter_by(categoryId=category).first()
                 reset = True
             else:
-                publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.not_in(activeSubquery)).order_by(func.rand()).first()
+                publication = Publication.query.filter(Publication.id.not_in(seenSubquery)).filter(Publication.userId.not_in(activeSubquery)).filter_by(categoryId=category).order_by(func.rand()).first()
 
             if publication == None:
                 return None, 204
 
             if reset == True:
-                return {"message": 'Seens reseted'}, 200
+                return {"message": 'Seens reseted', "data": None}, 200
 
             seen = Seen(publicationId=publication.id, userId=userId)
             db.session.add(seen)
@@ -82,14 +96,20 @@ class PublicationRoute(Resource):
         text = None
         author = None
         userId = None
+        categoryId = None
 
         try:
             text = data['text']
             userId = data['user_id']
             author = data['author']
-        except:
+            categoryId = data['category_id']
+        except Exception as err:
             return {"error": "Missing data."}, 400
 
+        categoryExists = Category.query.filter_by(id=categoryId).first()
+        if not categoryExists:
+            return {"error": "Category doesn't exists."}, 400
+            
         if len(text) > 1000:
             return {"error": "Text is too long."}, 400
         if author and len(author) > 20:
@@ -99,7 +119,7 @@ class PublicationRoute(Resource):
         if lastPublication and (lastPublication.date + timedelta(minutes=5)) >= datetime.utcnow():
             return {"error": "Wait 5 minutes between each publication."}, 400
 
-        publication = Publication(text=text, userId=userId, author=author)
+        publication = Publication(text=text, userId=userId, author=author, categoryId=categoryId)
         try:
             db.session.add(publication)
             db.session.commit()
@@ -125,16 +145,23 @@ class PublicationRoute(Resource):
         data = api.payload
         text = None
         author = None
+        categoryId = None
         try:
             text = data['text']
             author = data['author']
+            categoryId = data['category_id']
         except:
             return {"error": "Missing data."}, 400
+
+        categoryExists = Category.query.filter_by(id=categoryId).first()
+        if not categoryExists:
+            return {"error": "Category doesn't exists."}, 400
 
         try:
             publication = Publication.query.filter_by(id=id).first()
             publication.text = text
             publication.author = author
+            publication.categoryId = categoryId
             db.session.add(publication)
             db.session.commit()
             response = {
@@ -254,7 +281,7 @@ class PublicationsByUserRoute(Resource):
                 "user_id": publication.userId,
                 "date": str(publication.date),
                 "commentaries_count": publication.commentary.count(),
-                "share_count": publication.share.count()
+                "share_count": publication.share.count(),
             }, publications))
 
             return {"message": "Publications retrieved.", "data": responseArray}, 200
