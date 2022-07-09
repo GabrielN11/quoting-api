@@ -7,7 +7,6 @@ from src.models.category import Category
 
 from src.authorization.user_authorization import userAuthorization
 from src.authorization.admin_authorization import adminAuthorization
-from env import JWT_KEY
 
 @api.route('/category')
 @api.route('/category/<id>')
@@ -26,6 +25,7 @@ class CategoryRoute(Resource):
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
 
+    @adminAuthorization
     def post(self):
         name = api.payload['name']
         if not name:

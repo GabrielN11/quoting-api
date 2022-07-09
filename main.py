@@ -12,6 +12,7 @@ from src.controller.admin.admin_user import AdminUserRoute, AdminUserListRoute, 
 from src.controller.admin.admin_publication import AdminPublicationRoute
 from src.controller.follow import FollowRoute, FollowersRoute, FollowingRoute
 from src.controller.category import CategoryRoute
+from src.controller.report import ReportRoute, ReportListRoute, ReportClosedListRoute
 
 
 if __name__ == "__main__":
