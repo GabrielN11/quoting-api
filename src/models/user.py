@@ -10,10 +10,12 @@ class User(db.Model):
 
      id = db.Column(db.Integer, primary_key=True)
      username = db.Column(db.String(20), unique=True)
+     email = db.Column(db.String(254), unique=True)
      name = db.Column(db.String(25), default='Anonymous')
      password = db.Column(db.String(100))
      admin = db.Column(db.BOOLEAN, default=False)
      active = db.Column(db.BOOLEAN, default=True)
+     valid = db.Column(db.BOOLEAN, default=False)
      
      publication = db.relationship('Publication', cascade="all, delete")
      seen = db.relationship('Seen', cascade="all, delete", lazy='dynamic')
