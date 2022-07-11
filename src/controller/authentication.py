@@ -9,6 +9,7 @@ import string
 from src.server.instance import api, bcrypt, db, mail
 from src.models.user import User
 from src.authorization.user_authorization import userAuthorization
+from src.utils.email_template import generateTemplate
 from env import JWT_KEY, MAIL_ADDRESS
 
 @api.route('/sign-up')
@@ -50,8 +51,15 @@ class SignUpRoute(Resource):
                 'Quoting account validation',
                 sender = MAIL_ADDRESS,
                 recipients = [email]
-               )
-            msg.body = f"Hello @{username}! Welcome to Quoting! To finish your registration, please copy the code below and paste it in the app.\n\n{validationCode}"
+            )
+            msg.html = generateTemplate(username, validationCode)
+            msg.body = f"""
+            Hello @{username}! Thank you for joining in. To finish your registration, simple inform the code down below in your app. 
+            The code will expire in 10 minutes, but you can get another one if necessary by simple logging in with your username and 
+            password.
+
+            Code: {validationCode}
+            """
             mail.send(msg)
             
             data = {
@@ -154,7 +162,14 @@ class SignInRoute(Resource):
                     sender = MAIL_ADDRESS,
                     recipients = [userData.email]
                 )
-                msg.body = f"Hello @{userData.username}! Welcome to Quoting! To finish your registration, please copy the code below and paste it in the app.\n\n{validationCode}"
+                msg.html = generateTemplate(username, validationCode)
+                msg.body = f"""
+                Hello @{username}! Thank you for joining in. To finish your registration, simple inform the code down below in your app. 
+                The code will expire in 10 minutes, but you can get another one if necessary by simple logging in with your username and 
+                password.
+
+                Code: {validationCode}
+                """
                 mail.send(msg)
             
                 data = {
