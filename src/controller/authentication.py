@@ -9,7 +9,7 @@ import string
 from src.server.instance import api, bcrypt, db, mail
 from src.models.user import User
 from src.authorization.user_authorization import userAuthorization
-from src.utils.email_template import generateTemplate
+from src.utils.email_template import generateValidationTemplate, generateRecoveryTemplate
 from env import JWT_KEY, MAIL_ADDRESS
 
 @api.route('/sign-up')
@@ -52,7 +52,7 @@ class SignUpRoute(Resource):
                 sender = MAIL_ADDRESS,
                 recipients = [email]
             )
-            msg.html = generateTemplate(username, validationCode)
+            msg.html = generateValidationTemplate(username, validationCode)
             msg.body = f"""
             Hello @{username}! Thank you for joining in. To finish your registration, simple inform the code down below in your app. 
             The code will expire in 10 minutes, but you can get another one if necessary by simple logging in with your username and 
@@ -61,7 +61,6 @@ class SignUpRoute(Resource):
             Code: {validationCode}
             """
             mail.send(msg)
-            
             data = {
                 "id": user.id,
                 "validation_token": token
@@ -84,8 +83,11 @@ class SignUpRoute(Resource):
         if data['code'] != code:
             return {"error": 'Invalid code.'}, 401
 
+        print(data)
+
         try:
             user = User.query.filter_by(id=data['id']).first()
+            print(user)
             user.valid = True
             db.session.add(user)
             db.session.commit()
@@ -162,7 +164,7 @@ class SignInRoute(Resource):
                     sender = MAIL_ADDRESS,
                     recipients = [userData.email]
                 )
-                msg.html = generateTemplate(username, validationCode)
+                msg.html = generateValidationTemplate(username, validationCode)
                 msg.body = f"""
                 Hello @{username}! Thank you for joining in. To finish your registration, simple inform the code down below in your app. 
                 The code will expire in 10 minutes, but you can get another one if necessary by simple logging in with your username and 
@@ -190,4 +192,72 @@ class SignInRoute(Resource):
         else:
             return {"error": "Invalid authentication."}, 400
 
+@api.route('/recovery')
+@api.route('/recovery/<id>')
+class RecoveryRoute(Resource):
+    
+    def post(self):
+        email = api.payload['email']
+        if email == None:
+            return {"error": "Missing data."}, 400
         
+        try:
+            user = User.query.filter_by(email=email).first()
+            if user == None:
+                return {"error": "Invalid e-mail"}, 400
+
+            recoveryCode = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
+
+            token = jwt.encode({"id": user.id, "code": recoveryCode, 'exp': datetime.utcnow() + timedelta(minutes=10)}, JWT_KEY, algorithm="HS256")
+            msg = Message(
+                'Quoting account recover',
+                sender = MAIL_ADDRESS,
+                recipients = [user.email]
+            )
+            msg.html = generateRecoveryTemplate(user.username, recoveryCode)
+            msg.body = f"""
+            Hello @{user.username}! To recover your account, enter the code below in the application.
+
+            Code: {recoveryCode}
+            """
+            mail.send(msg)
+
+            return {"message": f"Recovery e-mail sent to {email}!", "data": {"recovery_token": token}}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+    def get(self):
+        token = request.args.get('token')
+        code = request.args.get('code')
+        data = None
+        try:
+            data = jwt.decode(token, JWT_KEY, algorithms="HS256")
+        except:
+            return {"error": 'Invalid authentication'}, 403
+
+        if data == None or data['code'] != code:
+            return {"error": 'Invalid authentication.'}, 403
+
+        user = User.query.filter_by(id=data['id']).first()
+
+        return {"message": "Authenticated.", "data": {"id": user.id}}, 200
+
+    def put(self, id):
+        password = api.payload['password']
+        if len(password) < 6:
+            return {"error": "Password is too short."}, 400
+        
+        hashed_pw = bcrypt.generate_password_hash(password).decode('utf-8')
+        try:
+            user = User.query.filter_by(id=id).first()
+
+            user.password = hashed_pw
+
+            db.session.add(user)
+            db.session.commit()
+
+            return {"message": "Password changed."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
