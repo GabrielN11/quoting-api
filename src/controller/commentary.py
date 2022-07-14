@@ -12,6 +12,7 @@ from src.models.share import Share
 
 from src.authorization.user_authorization import userAuthorization
 from env import JWT_KEY
+from src.utils.check_profanity import checkProfanity
 
 
 @api.route('/commentary')
@@ -34,6 +35,9 @@ class CommentaryRoute(Resource):
 
         if Publication.query.filter_by(id=publicationId).count() < 1 and User.query.filter_by(id=userId).count() < 1:
             return {"error": "Invalid publication or user."}, 400
+
+        if checkProfanity([text]):
+            return {"error": "Forbidden Language"}, 400
 
         lastCommentary = Commentary.query.filter_by(userId=userId).filter_by(publicationId=publicationId).order_by(desc(Commentary.date)).first()
         if lastCommentary and (lastCommentary.date + timedelta(minutes=5)) >= datetime.utcnow():
@@ -68,6 +72,9 @@ class CommentaryRoute(Resource):
             text = data['text']
         except:
             return {"error": "Missing data."}, 400
+
+        if checkProfanity([text]):
+            return {"error": "Forbidden Language"}, 400
 
         try:
             commentary = Commentary.query.filter_by(id=id).first()

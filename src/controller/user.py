@@ -12,6 +12,7 @@ from src.models.follow import Follow
 from src.authorization.user_authorization import userAuthorization
 from src.authorization.admin_authorization import adminAuthorization
 from env import JWT_KEY
+from src.utils.check_profanity import checkProfanity
 
 
 
@@ -93,6 +94,9 @@ class AlterNameRoute(Resource):
             name = data['name']
         except:
             return {"error": "Missing data."}, 400
+
+        if checkProfanity([name]):
+            return {"error": "Invalid display name."}, 400
 
         try:
             user = User.query.filter_by(id=id).first()

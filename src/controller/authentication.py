@@ -10,6 +10,7 @@ from src.server.instance import api, bcrypt, db, mail
 from src.models.user import User
 from src.authorization.user_authorization import userAuthorization
 from src.utils.email_template import generateValidationTemplate, generateRecoveryTemplate
+from src.utils.check_profanity import checkProfanity
 from env import JWT_KEY, MAIL_ADDRESS
 
 @api.route('/sign-up')
@@ -23,12 +24,14 @@ class SignUpRoute(Resource):
             username = data['username']
             password = data['password']
             email = data['email']
-
         except:
             return {"error": "Missing data."}, 400
 
         if len(password) < 6:
             return {"error": "Password is too short."}, 400
+
+        if checkProfanity([username]):
+            return {"error": "Invalid username."}, 400
 
         if User.query.filter_by(username=username).first() != None:
             return {"error": "Username already exists"}, 400

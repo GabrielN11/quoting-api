@@ -19,6 +19,7 @@ from src.models.category import Category
 from src.authorization.user_authorization import userAuthorization
 from src.authorization.admin_authorization import adminAuthorization
 from env import JWT_KEY
+from src.utils.check_profanity import checkProfanity
 
 dateConvertion = DateConvertion()
 
@@ -115,6 +116,10 @@ class PublicationRoute(Resource):
         if author and len(author) > 20:
             return {"error": "Author name is too long"}, 400
 
+        profanityArray = [text, author] if author != None else [text]
+        if checkProfanity(profanityArray):
+            return {"error": "Forbidden Language"}, 400
+
         lastPublication = Publication.query.filter_by(userId=userId).order_by(desc(Publication.date)).first()
         if lastPublication and (lastPublication.date + timedelta(minutes=5)) >= datetime.utcnow():
             return {"error": "Wait 5 minutes between each publication."}, 400
@@ -156,6 +161,15 @@ class PublicationRoute(Resource):
         categoryExists = Category.query.filter_by(id=categoryId).first()
         if not categoryExists:
             return {"error": "Category doesn't exists."}, 400
+
+        if len(text) > 1000:
+            return {"error": "Text is too long."}, 400
+        if author and len(author) > 20:
+            return {"error": "Author name is too long"}, 400
+
+        profanityArray = [text, author] if author != None else [text]
+        if checkProfanity(profanityArray):
+            return {"error": "Forbidden Language"}, 400
 
         try:
             publication = Publication.query.filter_by(id=id).first()
