@@ -10,6 +10,8 @@ Quoting is a social media application made with the aim of users sharing quotes 
 - Flask Bcrypt
 - PyJWT
 - Flask CORS
+- Flask Mail
+- PurgoMalum API
 
 Check the application repository and README [clicking here](https://github.com/GabrielN11/quoting-app "clicking here").
 
@@ -19,7 +21,6 @@ This is the Restful API of my Quoting application using Flask and SQL Alchemy. A
 
 ## Points to improve
 
-- E-mail validation to sign up account;
 - Better authorization for specific routes;
 - ...
 
