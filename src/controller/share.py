@@ -47,6 +47,10 @@ class ShareRoute(Resource):
                         "date": str(publication.date),
                         "commentaries_count": publication.commentary.count(),
                         "share_count": publication.share.count(),
+                        "user": {
+                            "id": user.id,
+                            "name": user.name
+                        },
                         "type": "publication"
                     }
                     return response
@@ -58,6 +62,11 @@ class ShareRoute(Resource):
                         "text": commentary.text,
                         "user_id": commentary.userId,
                         "publication_id": commentary.publicationId,
+                        "share_count": commentary.share.count(),
+                        "user": {
+                            "id": user.id,
+                            "name": user.name
+                        },
                         "type": "commentary"
                     }
                     return response

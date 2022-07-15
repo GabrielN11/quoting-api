@@ -49,13 +49,18 @@ class CommentaryRoute(Resource):
             db.session.add(commentary)
             db.session.commit()
 
+            user = User.query.filter_by(id=userId).first()
             response = {
                 "id": commentary.id,
                 "date": str(commentary.date),
                 "text": commentary.text,
                 "user_id": commentary.userId,
                 "share_count": commentary.share.count(),
-                "publication_id": commentary.publicationId
+                "publication_id": commentary.publicationId,
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
             }
 
             return {"message": "Commentary published.", "data": response}, 201
@@ -82,12 +87,18 @@ class CommentaryRoute(Resource):
             db.session.add(commentary)
             db.session.commit()
 
+            user = User.query.filter_by(id=commentary.userId).first()
             response = {
                 "id": commentary.id,
                 "text": commentary.text,
                 "user_id": commentary.userId,
                 "publication_Id": commentary.publicationId,
-                "date": str(commentary.date)
+                "share_count": commentary.share.count(),
+                "date": str(commentary.date),
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
             }
 
             return {"message": "Commentary updated.", "data": response}, 200
@@ -128,14 +139,21 @@ class CommentaryByPublicationRoute(Resource):
             if len(commentaries) == 0:
                 return 204
             
-            responseArray = list(map(lambda commentary: {
+            def formatCommentaries(commentary):
+                user = User.query.filter_by(id=commentary.userId).first()
+                return {
                 "id": commentary.id,
                 "text": commentary.text,
                 "user_id": commentary.userId,
                 "publication_id": commentary.publicationId,
                 "share_count": commentary.share.count(),
                 "date": str(commentary.date),
-            }, commentaries))
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
+            }
+            responseArray = list(map(formatCommentaries, commentaries))
 
             return {"message": "Commentaries retrieved.", "data": responseArray}, 200
 
@@ -165,14 +183,22 @@ class CommentaryByUserRoute(Resource):
             
             if len(commentaries) == 0:
                 return None, 204
-            
-            responseArray = list(map(lambda commentary: {
+
+            def formatCommentaries(commentary):
+                user = User.query.filter_by(id=commentary.userId).first()
+                return {
                 "id": commentary.id,
                 "text": commentary.text,
                 "user_id": commentary.userId,
                 "publication_id": commentary.publicationId,
+                "share_count": commentary.share.count(),
                 "date": str(commentary.date),
-            }, commentaries))
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
+            }
+            responseArray = list(map(formatCommentaries, commentaries))
 
             return {"message": "Commentaries retrieved.", "data": responseArray}, 200
 

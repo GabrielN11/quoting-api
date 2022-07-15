@@ -18,6 +18,7 @@ from src.utils.check_profanity import checkProfanity
 
 @api.route('/profile/<id>')
 class ProfileRoute(Resource):
+
     def get(self, id):
         try:
             user = User.query.filter_by(id=id).first()
@@ -30,6 +31,9 @@ class ProfileRoute(Resource):
             shareCount = Share.query.filter_by(userId=user.id).count()
             pinnedPublication = Publication.query.filter_by(pinned=True).filter_by(userId=id).first()
 
+            userId = jwt.decode(request.headers.get('Authorization').split()[1], JWT_KEY, algorithms="HS256")['id']
+            follow = Follow.query.filter(Follow.follower == userId).filter(Follow.userId == id).first()
+
             response = {
                 "id": user.id,
                 "username": user.username,
@@ -39,7 +43,17 @@ class ProfileRoute(Resource):
                 "publication_count": publicationCount,
                 "commentary_count": commentaryCount,
                 "share_count": shareCount,
-                "pinned_publication": pinnedPublication.id if pinnedPublication != None else None
+                "pinned_publication": {
+                    "id": pinnedPublication.id,
+                    "author": pinnedPublication.author,
+                    "text": pinnedPublication.text,
+                    "user_id": pinnedPublication.userId,
+                    "date": str(pinnedPublication.date),
+                    "pinned": pinnedPublication.pinned,
+                    "commentaries_count": pinnedPublication.commentary.count(),
+                    "share_count": pinnedPublication.share.count(),
+                } if pinnedPublication != None else None,
+                "following": follow.id if follow != None else False
             }
 
             return {"message": "Profile found.", "data": response}

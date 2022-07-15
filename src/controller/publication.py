@@ -73,6 +73,8 @@ class PublicationRoute(Resource):
             db.session.add(seen)
             db.session.commit()
 
+            user = User.query.filter_by(id=publication.userId).first()
+
             response = {
                 "id": publication.id,
                 "author": publication.author,
@@ -82,7 +84,11 @@ class PublicationRoute(Resource):
                 "pinned": publication.pinned,
                 "commentaries_count": publication.commentary.count(),
                 "share_count": publication.share.count(),
-                "reset_seen": reset
+                "reset_seen": reset,
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                }
             }
 
             return {"message": "Publication retrieved.", "data": response}, 200
@@ -131,13 +137,6 @@ class PublicationRoute(Resource):
 
             response = {
                 "id": publication.id,
-                "author": publication.author,
-                "text": publication.text,
-                "user_id": publication.userId,
-                "date": str(publication.date),
-                "commentaries_count": publication.commentary.count(),
-                "share_count": publication.share.count(),
-                "reset_seen": False
             }
 
             return {"message": "Posted.", "data": response}, 201
@@ -178,14 +177,9 @@ class PublicationRoute(Resource):
             publication.categoryId = categoryId
             db.session.add(publication)
             db.session.commit()
+
             response = {
                 "id": publication.id,
-                "author": publication.author,
-                "text": publication.text,
-                "user_id": publication.userId,
-                "date": str(publication.date),
-                "commentaries_count": publication.commentary.count(),
-                "share_count": publication.share.count(),
             }
             return {"message": "Publication updated.", "data": response}, 200
         except Exception as err:
@@ -250,14 +244,24 @@ class PublicationByFollowRoute(Resource):
             db.session.add(seen)
             db.session.commit()
 
+
+
+            user = User.query.filter_by(id=publication.userId).first()
+
             response = {
                 "id": publication.id,
                 "author": publication.author,
                 "text": publication.text,
                 "user_id": publication.userId,
                 "date": str(publication.date),
+                "pinned": publication.pinned,
                 "commentaries_count": publication.commentary.count(),
                 "share_count": publication.share.count(),
+                "reset_seen": reset,
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                }
             }
 
             return {"message": "Publication retrieved.", "data": response}, 200
@@ -287,8 +291,10 @@ class PublicationsByUserRoute(Resource):
             
             if len(publications) == 0:
                 return None, 204
-            
-            responseArray = list(map(lambda publication: {
+
+            def formatPublication(publication):
+                user = User.query.filter_by(id=publication.userId).first()
+                return {
                 "id": publication.id,
                 "author": publication.author,
                 "text": publication.text,
@@ -296,7 +302,12 @@ class PublicationsByUserRoute(Resource):
                 "date": str(publication.date),
                 "commentaries_count": publication.commentary.count(),
                 "share_count": publication.share.count(),
-            }, publications))
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
+            }
+            responseArray = list(map(formatPublication, publications))
 
             return {"message": "Publications retrieved.", "data": responseArray}, 200
 
@@ -325,7 +336,11 @@ class PublicationByIdRoute(Resource):
                 "date": str(publication.date),
                 "pinned": publication.pinned,
                 "commentaries_count": publication.commentary.count(),
-                "share_count": publication.share.count()
+                "share_count": publication.share.count(),
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
             }
 
             return {"message": "Publication retrieved.", "data": response}, 200
