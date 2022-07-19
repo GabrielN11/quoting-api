@@ -1,7 +1,7 @@
 from flask import request
 from flask_restx import Resource
 import jwt
-from sqlalchemy import desc
+from sqlalchemy import desc, or_
 
 from src.server.instance import api, db, bcrypt
 
@@ -139,3 +139,36 @@ class ShareByPublication(Resource):
             if share == None:
                 return 204
             return {"data": share.id}, 200
+
+@api.route('/users-by-share/<id>')
+class UsersByShare(Resource):
+
+    def get(self, id):
+        limit = 10
+        page = 0
+        try:
+            page = int(request.args.get('page')) * 10
+        except:
+            return {"error": "Page not informed correctly."}, 400
+        
+        try:
+            shareSubquery = db.session.query(Share.userId).filter(or_(Share.publicationId == id, Share.commentaryId == id)).subquery()
+            users = User.query.filter(User.id.in_(shareSubquery)).filter_by(active=True).limit(limit).offset(page).all()
+
+            if len(users) < 1:
+                return None, 204
+
+            response = list(map(lambda user: {
+                "id": user.id,
+                "name": user.name,
+                "username": user.username,
+                "active": user.active,
+                "is_admin": user.admin
+            }, users))
+
+            return {"message": "Users retrieved.", "data": response}, 200
+            
+
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500

@@ -2,6 +2,7 @@ from flask import request
 from flask_restx import Resource
 import jwt
 from src.server.instance import api, db, bcrypt
+from sqlalchemy import desc, or_
 
 from src.models.user import User
 from src.models.publication import Publication
@@ -124,6 +125,42 @@ class AlterNameRoute(Resource):
             db.session.commit()
 
             return {"message": "Name updated."}, 200
+        except Exception as err:
+            print(str(err))
+            return {"error": "Error connecting to database. Try again later."}, 500
+
+@api.route('/user-list')
+class UserListRoute(Resource):
+
+    @userAuthorization
+    def get(self):
+        searchQuery = request.args.get('search')
+        page = 0
+        limit = 20
+        try:
+            page = int(request.args.get('page')) * 10
+        except:
+            return {"error": "Page not informed."}, 400
+
+        try:
+            users = []
+            if searchQuery:
+                users = User.query.filter(or_(User.name.ilike("%"+searchQuery.lower()+"%"), User.username.ilike(("%"+searchQuery.lower()+"%")))).limit(limit).offset(page).all()
+            else:
+                users = User.query.limit(limit).offset(page).all()
+
+            if len(users) < 1:
+                return None, 204
+        
+            response = list(map(lambda user: {
+                "id": user.id,
+                "name": user.name,
+                "username": user.username,
+                "active": user.active,
+                "is_admin": user.admin
+            }, users))
+
+            return {"message": "Users retrieved.", "data": response}, 200
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500

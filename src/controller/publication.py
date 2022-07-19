@@ -3,7 +3,7 @@ from flask_restx import Resource
 from datetime import datetime, timedelta
 import jwt
 
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, or_
 
 from src.server.instance import api, db
 from src.utils.dateConvertion import DateConvertion
@@ -315,6 +315,52 @@ class PublicationsByUserRoute(Resource):
             print(str(err))
             return {"error": 'Error connecting to database. Try again later.'}, 500
 
+@api.route('/seen-publications/<id>')
+class SeenPublications(Resource):
+
+    @userAuthorization
+    def get(self, id):
+        limit = 10
+        page = 0
+
+        try:
+            page = int(request.args.get('page')) * 10
+        except:
+            return {"error": "Page not informed correctly."}, 400
+
+        user = User.query.filter_by(id=id).first()
+        if user.active == False:
+            return {"error": "This user is banned."}, 403
+
+        try:
+            seenSubquery = db.session.query(Seen.publicationId).filter_by(userId=id).subquery()
+            publications = Publication.query.filter(Publication.id.in_(seenSubquery)).order_by(desc(Publication.date)).limit(limit).offset(page).all()
+            if len(publications) == 0:
+                return None, 204
+
+            def formatPublication(publication):
+                user = User.query.filter_by(id=publication.userId).first()
+                return {
+                "id": publication.id,
+                "author": publication.author,
+                "text": publication.text,
+                "user_id": publication.userId,
+                "date": str(publication.date),
+                "commentaries_count": publication.commentary.count(),
+                "share_count": publication.share.count(),
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
+            }
+            responseArray = list(map(formatPublication, publications))
+
+            return {"message": "Publications retrieved.", "data": responseArray}, 200
+
+        except Exception as err:
+            print(str(err))
+            return {"error": 'Error connecting to database. Try again later.'}, 500
+
 @api.route('/publication-by-id/<id>')
 class PublicationByIdRoute(Resource):
     
@@ -394,5 +440,53 @@ class PinRoute(Resource):
         except Exception as err:
             print(str(err))
             return {"error": "Error connecting to database. Try again later."}, 500
+
+
+@api.route('/publication-list')
+class PublicationListRoute(Resource):
+
+    @userAuthorization
+    def get(self):
+        searchQuery = request.args.get('search')
+        limit = 10
+        page = 0
+
+        try:
+            page = int(request.args.get('page')) * 10
+        except:
+            return {"error": "Page not informed correctly."}, 400
+        try:
+            publications = []
+            if searchQuery:
+                usernamesSubquery = db.session.query(User.id).filter(User.name.ilike("%"+searchQuery.lower()+"%")).subquery()
+                publications = Publication.query.filter(or_(Publication.userId.in_(usernamesSubquery), Publication.author.ilike("%"+searchQuery.lower()+"%"), Publication.text.ilike("%"+searchQuery.lower()+"%"))).limit(limit).offset(page).all()
+            else:
+                publications = Publication.query.order_by(desc(Publication.date)).limit(limit).offset(page).all()
+            
+            if len(publications) == 0:
+                return None, 204
+
+            def formatPublication(publication):
+                user = User.query.filter_by(id=publication.userId).first()
+                return {
+                "id": publication.id,
+                "author": publication.author,
+                "text": publication.text,
+                "user_id": publication.userId,
+                "date": str(publication.date),
+                "commentaries_count": publication.commentary.count(),
+                "share_count": publication.share.count(),
+                "user": {
+                    "id": user.id,
+                    "name": user.name
+                }
+            }
+            responseArray = list(map(formatPublication, publications))
+
+            return {"message": "Publications retrieved.", "data": responseArray}, 200
+
+        except Exception as err:
+            print(str(err))
+            return {"error": 'Error connecting to database. Try again later.'}, 500
 
 
