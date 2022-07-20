@@ -23,3 +23,4 @@ class User(db.Model):
      share = db.relationship('Share', cascade="all, delete")
      follow = db.relationship('Follow', foreign_keys='Follow.userId', cascade="all, delete")
      follower = db.relationship('Follow', foreign_keys='Follow.follower', cascade="all, delete")
+     report = db.relationship('Report', foreign_keys='Report.userId', cascade="all, delete")

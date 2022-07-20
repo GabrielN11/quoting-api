@@ -74,6 +74,7 @@ class PublicationRoute(Resource):
             db.session.commit()
 
             user = User.query.filter_by(id=publication.userId).first()
+            category = Category.query.filter_by(id=publication.categoryId).first()
 
             response = {
                 "id": publication.id,
@@ -88,6 +89,10 @@ class PublicationRoute(Resource):
                 "user": {
                     "id": user.id,
                     "name": user.name,
+                },
+                "category": {
+                    "id": category.id,
+                    "name": category.name
                 }
             }
 
@@ -247,6 +252,7 @@ class PublicationByFollowRoute(Resource):
 
 
             user = User.query.filter_by(id=publication.userId).first()
+            category = Category.query.filter_by(id=publication.categoryId).first()
 
             response = {
                 "id": publication.id,
@@ -261,6 +267,10 @@ class PublicationByFollowRoute(Resource):
                 "user": {
                     "id": user.id,
                     "name": user.name,
+                },
+                "category": {
+                    "id": category.id,
+                    "name": category.name
                 }
             }
 
@@ -374,6 +384,8 @@ class PublicationByIdRoute(Resource):
             if user.active == False:
                 return {"error": "This user is banned."}, 403
 
+            category = Category.query.filter_by(id=publication.categoryId).first()
+
             response = {
                 "id": publication.id,
                 "author": publication.author,
@@ -386,6 +398,10 @@ class PublicationByIdRoute(Resource):
                 "user": {
                     "id": user.id,
                     "name": user.name
+                },
+                "category": {
+                    "id": category.id,
+                    "name": category.name
                 }
             }
 
